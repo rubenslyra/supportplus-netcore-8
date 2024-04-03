@@ -1,4 +1,4 @@
-# Modelagem de Dadoos
+# Modelagem de Dados
 
 A modelagem de dados para o projeto SupportPlus pode incluir as seguintes entidades:
 
