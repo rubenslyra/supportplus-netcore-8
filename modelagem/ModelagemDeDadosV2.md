@@ -63,9 +63,7 @@ Com base nessas entidades, podemos criar o diagrama de entidade-relacionamento (
                 +-----|------------------+            |
                 |     | Id_Usuário (FK)  |<----------+
                 |     | Código de        |
-                |     | Confirmação
-
-      |
+                |     | Confirmação      |
                 |     | Data de Expiração|
                 |     | Data de Criação  |
                 +----------------------+
