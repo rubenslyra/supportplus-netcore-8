@@ -57,3 +57,6 @@ Contribuições são bem-vindas! Sinta-se à vontade para abrir issues ou enviar
 
 Este projeto está licenciado sob a licença MIT. Consulte o arquivo `LICENSE` para obter mais detalhes.
 
+![Desktopa](https://github.com/rubenslyra/supportplus-netcore-8/assets/37023108/737b3c14-9f4d-46a3-9eb2-308435b99123)
+
+
