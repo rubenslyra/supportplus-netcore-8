@@ -2,31 +2,25 @@
 
 A modelagem de dados para o projeto SupportPlus pode incluir as seguintes entidades:
 
-1. **Usuário (User)**:
-   - **Id**: Identificador único do usuário (chave primária).
-   - **Nome**: Nome do usuário.
-   - **Email**: Endereço de e-mail do usuário.
-   - **Senha**: Senha criptografada do usuário.
-   - **Role**: Papel do usuário no sistema (por exemplo, usuário comum, agente de suporte).
-   - **Data de Criação**: Data e hora de criação do usuário.
-   - **Último Login**: Data e hora do último login do usuário.
-
-2. **Ticket**:
+1. **Ticket**:
    - **Id**: Identificador único do ticket (chave primária).
-   - **Título**: Título ou assunto do ticket.
+   - **Título**: Título ou assunto do ticket. (máximo de 100 caracteres)
    - **Descrição**: Descrição detalhada do problema ou solicitação.
    - **Status**: Status atual do ticket (aberto, em progresso, fechado, etc.).
    - **Data de Criação**: Data e hora de criação do ticket.
+   - **Data de Alteração**: Data e hora da última alteração do ticket.
+   - **Data de Remoção**: Data e hora de remoção lógica do ticket (após 1 ano).
    - **Id do Usuário**: Chave estrangeira que faz referência ao usuário que criou o ticket.
+   - **Id do Usuário que Removeu**: Chave estrangeira que faz referência ao usuário que removeu o ticket (null se não removido).
 
-3. **Comentário (Comment)**:
+2. **Comentário (Comment)**:
    - **Id**: Identificador único do comentário (chave primária).
-   - **Mensagem**: Conteúdo do comentário.
+   - **Mensagem**: Conteúdo do comentário. (máximo de 500 caracteres)
    - **Data de Criação**: Data e hora de criação do comentário.
    - **Id do Ticket**: Chave estrangeira que faz referência ao ticket ao qual o comentário está associado.
    - **Id do Usuário**: Chave estrangeira que faz referência ao usuário que fez o comentário.
 
-4. **Confirmação de E-mail (EmailConfirmation)**:
+3. **Confirmação de E-mail (EmailConfirmation)**:
    - **Id do Usuário**: Chave estrangeira que faz referência ao usuário associado à confirmação de e-mail.
    - **Código de Confirmação**: Código único gerado para confirmar o e-mail.
    - **Data de Expiração**: Data e hora de expiração do código de confirmação.
@@ -34,47 +28,35 @@ A modelagem de dados para o projeto SupportPlus pode incluir as seguintes entida
 Com base nessas entidades, podemos criar o diagrama de entidade-relacionamento (ER) para representar a estrutura de dados do projeto SupportPlus. Este diagrama mostrará as relações entre as entidades e suas respectivas chaves primárias e estrangeiras. Vou criar uma representação simplificada do diagrama:
 
 ```
-    +-----------------------+        +---------------------+
-    |        Usuário        |        |        Ticket       |
-    +-----------------------+        +---------------------+
-    | Id (PK)               |<----+  | Id (PK)             |
-    | Nome                  |     |  | Título              |
-    | Email                 |     |  | Descrição           |
-    | Senha                 |     |  | Status              |
-    | Role                  |     |  | Data de Criação     |
-    | Data de Criação       |     |  | Id_Usuário (FK)     |
-    | Último Login          |     |  +---------------------+
-    +-----------------------+     |
-          |                       |
-          |     +-----------------|-------------------+
-          |     |                 |                   |
-          +-----|-----------------+                   |
-                |                                     |
-                |     +------------------+            |
-                |     |    Comentário    |            |
-                +-----|------------------+            |
-                      | Id (PK)          |            |
-                      | Mensagem         |            |
-                      | Data de Criação  |            |
-                      | Id_Ticket (FK)   |            |
-                      | Id_Usuário (FK)  |            |
-                      +------------------+            |
-                                                        |
-                                                        |
-                      +------------------+            |
-                      |  Confirmação de  |            |
-                      |      E-mail      |            |
-                      +------------------+            |
-                      | Id_Usuário (FK)  |------------+
+    +---------------------+        +-----------------+
+    |        Ticket       |        |    Comentário   |
+    +---------------------+        +-----------------+
+    | Id (PK)             |<----+  | Id (PK)         |
+    | Título              |     |  | Mensagem        |
+    | Descrição           |     |  | Data de Criação |
+    | Status              |     |  | Id_Ticket (FK)  |
+    | Data de Criação     |     |  | Id_Usuário (FK) |
+    | Data de Alteração   |     |  +-----------------+
+    | Data de Remoção     |     |
+    | Id_Usuário (FK)     |     |
+    | Id_Usuário_Remocao (FK) |  |
+    +---------------------+     |
+          |                      |
+          |     +----------------|-------------------+
+          |     |                |                   |
+          +-----|----------------+                   |
+                |                                    |
+                |     +------------------+           |
+                |     |  Confirmação de  |           |
+                +-----|      E-mail      |           |
+                      +------------------+           |
+                      | Id_Usuário (FK)  |-----------+
                       | Código de        |
                       | Confirmação      |
                       | Data de Expiração|
                       +------------------+
 ```
 
-
-
----
 
 Para adicionar dados diretamente ao banco de dados, é fundamental garantir que as transações sejam realizadas de forma segura e que os dados estejam consistentes. Vou fornecer uma instrução geral sobre como fazer isso, abordando as práticas recomendadas para transações e segurança.
 
@@ -88,11 +70,12 @@ using (var connection = new NpgsqlConnection(connectionString))
 {
     await connection.OpenAsync();
     
-    var sqlCommand = "INSERT INTO Users (Name, Email) VALUES (@Name, @Email)";
+    var sqlCommand = "INSERT INTO Tickets (Title, Description, ...) VALUES (@Title, @Description, ...)";
     using (var command = new NpgsqlCommand(sqlCommand, connection))
     {
-        command.Parameters.AddWithValue("@Name", user.Name);
-        command.Parameters.AddWithValue("@Email", user.Email);
+        command.Parameters.AddWithValue("@Title", ticket.Title);
+        command.Parameters.AddWithValue("@Description", ticket.Description);
+        // Adicione outros parâmetros conforme necessário
         
         await command.ExecuteNonQueryAsync();
     }
@@ -155,7 +138,9 @@ if (!IsValidEmail(user.Email))
 ```
 
 6. **Limite de Acesso aos Dados**:
-   - Utilize o princípio do menor privilégio e conceda apenas as permissões mínimas necessárias para acessar os dados do banco de dados.
+   - Utilize o princípio do menor privilégio e conceda apenas as permissões mínimas necessárias para acessar os dados do
+
+ banco de dados.
 
 7. **Auditoria**:
    - Registre todas as operações críticas realizadas no banco de dados para fins de auditoria e rastreabilidade.
@@ -163,3 +148,4 @@ if (!IsValidEmail(user.Email))
 ### Considerações Finais
 
 Ao adicionar dados diretamente ao banco de dados, é crucial seguir as práticas recomendadas para transações e segurança para garantir a integridade e a segurança dos dados. Certifique-se de implementar essas práticas em todas as operações de banco de dados em seu projeto.
+
